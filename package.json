@@ -1,0 +1,27 @@
+{
+  "name": "han-ext",
+  "version": "0.0.1",
+  "description": "hancode - AI assiated coding with local servers",
+  "main": "out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "test": "test"  },
+  "engines": {
+    "vscode": "^1.107.0"
+  },
+  "contributes": {
+    "commands":[
+        {
+            "command": "hancode.health",
+            "title": "Hancode: Health Check"
+        }
+    ]
+  },
+  "devDependencies": {
+    "@types/vscode": "1.107.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "author": "Hanish Dhanwalkar",
+  "license": "MIT"
+}
