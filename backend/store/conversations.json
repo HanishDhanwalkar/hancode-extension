@@ -1,0 +1,20 @@
+{
+    "CH001": [
+        {
+            "role": "system",
+            "content": "You are a Expert Coding asssisant."
+        },
+        {
+            "role": "user",
+            "content": "Add doctring in Google style to this code: def hello():\n    print('Hello World')"
+        },
+        {
+            "role": "assistant",
+            "content": "```python"
+        },
+        {
+            "role": "assistant",
+            "content": "\n\"\"\"\nhello.py\n\nA simple Python script that prints 'Hello World' to the console.\n\nAuthor: [Your Name]\nDate: [Today's Date]\n\nUsage:\n  python hello.py\n\"\"\"\n\ndef hello():\n    \"\"\"\n    Prints a greeting message to the console.\n\n    Returns:\n        None\n    \"\"\"\n    print('Hello World')\n"
+        }
+    ]
+}
