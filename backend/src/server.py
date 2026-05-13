@@ -1,44 +1,58 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Optional
 
 from common.llm import LLMClient
 
 app = FastAPI()
 llm = LLMClient()
 
-class CodeQuery(BaseModel):
-    code: str
-    instruction: str
-    conversation_id: str = "CH001"
+# Updated to match the extension's request structure
+class GenerateRequest(BaseModel):
+    prompt: str
+    mode: str  # 'chat' or 'complete'
+    conversation_id: Optional[str] = "CH001"
 
-@app.post("/process")
-async def process_code(query: CodeQuery):
+@app.post("/generate")
+async def generate(request: GenerateRequest):
     try:
         messages = []
-        llm._add_sys_prompt("You are an Expert Coding Assistant. Modify the provided code based on the instructions. Return ONLY the code.", messages)
         
-        # Combine user instruction and code
-        prompt = f"Instruction: {query.instruction}\n\nCode:\n{query.code}"
-        llm._add_user_msg(prompt, messages)
+        # 1. System Prompt based on Mode
+        if request.mode == "complete":
+            sys_msg = "You are a code completion engine. Continue the code provided. Return ONLY the code completion."
+        else:
+            sys_msg = "You are a helpful AI coding assistant. Answer questions or explain code clearly."
+            
+        llm._add_sys_prompt(sys_msg, messages)
         
-        # Optional: Add assistant prefill to encourage code blocks
-        llm._add_assistant_msg("```python\n", messages)
-
+        # 2. Add the User Prompt
+        llm._add_user_msg(request.prompt, messages)
+        
+        # 3. Stream from your existing LLM client
         full_response = ""
         async for chunk in llm.stream_processor(messages):
-            if "complete" in chunk:
+            # Checking for 'complete' key based on your original server.py logic
+            if isinstance(chunk, dict) and "complete" in chunk:
                 full_response = chunk["complete"]
+            elif isinstance(chunk, str):
+                full_response += chunk
+
+        # 4. Post-processing
+        # Remove markdown artifacts if the model returns them
+        clean_response = full_response.replace("```python", "").replace("```", "").strip()
         
-        # Clean up the response (remove markdown backticks if any)
-        clean_code = full_response.replace("```python", "").replace("```", "").strip()
+        # 5. Save History
+        llm._save_conversation(request.conversation_id, messages)
         
-        # Save history as per your llm.py logic
-        llm._save_conversation(query.conversation_id, messages)
-        
-        return {"result": clean_code}
+        # Return the key "text" as expected by api.ts
+        return {"text": clean_response}
+
     except Exception as e:
+        print(f"Server Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
+    # Using 127.0.0.1 to match the extension's call
     uvicorn.run(app, host="127.0.0.1", port=8000)
