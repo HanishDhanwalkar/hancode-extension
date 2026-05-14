@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from common.llm import LLMClient
+from common.knowledge_graph import build_python_slice, empty_slice
 
 app = FastAPI()
 llm = LLMClient()
@@ -12,6 +13,26 @@ class GenerateRequest(BaseModel):
     prompt: str
     mode: str  # 'chat' or 'complete'
     conversation_id: Optional[str] = "CH001"
+    workspace_context: Optional[str] = None
+
+
+class KnowledgeBuildRequest(BaseModel):
+    fileFsPath: str
+    content: str
+    languageId: str
+
+
+@app.post("/knowledge/build")
+async def knowledge_build(request: KnowledgeBuildRequest):
+    """AST-backed knowledge slice (nodes/edges/digest). Python is native; other languages return a stub slice."""
+    if request.languageId == "python":
+        return build_python_slice(request.fileFsPath, request.content)
+    return empty_slice(
+        request.fileFsPath,
+        request.languageId,
+        "server-side AST graph is implemented for Python; TS/JS is indexed in the editor extension",
+    )
+
 
 @app.post("/generate")
 async def generate(request: GenerateRequest):
@@ -23,11 +44,25 @@ async def generate(request: GenerateRequest):
             sys_msg = "You are a code completion engine. Continue the code provided. Return ONLY the code completion."
         else:
             sys_msg = "You are a helpful AI coding assistant. Answer questions or explain code clearly."
-            
+
+        if request.workspace_context:
+            sys_msg += (
+                "\n\nYou may receive a WORKSPACE_MAP summarizing symbols and imports "
+                "from saved workspace files (TypeScript/JavaScript via the editor, Python via the knowledge API). "
+                "Use it to avoid duplicating existing helpers, to name things consistently, "
+                "and to reference real file paths and symbols when suggesting edits."
+            )
+
         llm._add_sys_prompt(sys_msg, messages)
-        
-        # 2. Add the User Prompt
-        llm._add_user_msg(request.prompt, messages)
+
+        user_prompt = request.prompt
+        if request.workspace_context and request.mode != "complete":
+            user_prompt = (
+                "WORKSPACE_MAP (from AST index on save; may be partial):\n"
+                f"{request.workspace_context}\n\n---\nUSER:\n{request.prompt}"
+            )
+
+        llm._add_user_msg(user_prompt, messages)
         
         # 3. Stream from your existing LLM client
         full_response = ""

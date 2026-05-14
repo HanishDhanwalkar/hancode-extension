@@ -1,21 +1,33 @@
 import * as vscode from 'vscode';
 import { SideChatProvider } from './SideChatProvider';
 import { GhostTextProvider } from './GhostTextProvider';
+import { WorkspaceKnowledgeManager } from './workspaceKnowledge';
 
-export function activate(context: vscode.ExtensionContext) {
-    console.log('Hancode Activated');
+export async function activate(context: vscode.ExtensionContext) {
+    const knowledge = new WorkspaceKnowledgeManager();
+    knowledge.setWorkspaceRoot(vscode.workspace.workspaceFolders?.[0]?.uri);
+    await knowledge.initializeWorkspaceState();
 
-    // Health Check Command
-    const health_command = vscode.commands.registerCommand('hancode.health', () => {
-        vscode.window.showInformationMessage('Hello Coder: Hancode is up and running!');
-    });
-
-    const chatProvider = new SideChatProvider(context.extensionUri);
+    const chatProvider = new SideChatProvider(context.extensionUri, knowledge);
     const ghostProvider = new GhostTextProvider();
 
+    const health_command = vscode.commands.registerCommand('hancode.health', () => {
+        void vscode.window.showInformationMessage('Hancode is running.');
+    });
+
+    knowledge.attach(context);
+    chatProvider.attachEditorBridge(context);
+
     context.subscriptions.push(health_command);
-    context.subscriptions.push(vscode.window.registerWebviewViewProvider("hancode-chat", chatProvider));
-    context.subscriptions.push(vscode.languages.registerInlineCompletionItemProvider({ pattern: "**" }, ghostProvider));
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider('hancode-chat', chatProvider));
+    context.subscriptions.push(
+        vscode.languages.registerInlineCompletionItemProvider({ pattern: '**' }, ghostProvider)
+    );
+
+    const ed = vscode.window.activeTextEditor;
+    if (ed) {
+        knowledge.indexDocumentIfSupported(ed.document);
+    }
 }
 
-export function deactivate() { }
+export function deactivate() {}

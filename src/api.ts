@@ -1,16 +1,25 @@
 import axios from 'axios';
 
-export async function queryLocalLLM(prompt: string, mode: 'chat' | 'complete') {
+export interface GenerateOptions {
+    workspaceSummary?: string;
+    conversationId?: string;
+}
+
+export async function queryLocalLLM(
+    prompt: string,
+    mode: 'chat' | 'complete',
+    opts?: GenerateOptions
+): Promise<string> {
     try {
         const response = await axios.post('http://127.0.0.1:8000/generate', {
-            prompt: prompt,
-            mode: mode,
-            conversation_id: "SIDEBAR_CHAT"
+            prompt,
+            mode,
+            conversation_id: opts?.conversationId ?? 'SIDEBAR_CHAT',
+            workspace_context: opts?.workspaceSummary ?? null,
         });
-        // server.py returns {"text": "..."}
-        return response.data.text; 
+        return response.data.text as string;
     } catch (error) {
-        console.error("API call failed:", error);
+        console.error('API call failed:', error);
         throw error;
     }
 }

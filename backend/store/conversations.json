@@ -1,1 +1,36 @@
-{"CH001": [{"role": "system", "content": "You are an Expert Coding Assistant. Modify the provided code based on the instructions. Return ONLY the code."}, {"role": "user", "content": "Instruction: delete this function and add a function for adding 2 numbers\n\nCode:\ndef greet_user():\r\n    \"\"\"\r\n    Prints a personalized greeting message.\r\n\r\n    Returns:\r\n        None\r\n    \"\"\"\r\n    name = input(\"Please enter your name: \")\r\n    print(f\"Hello {name}\")"}, {"role": "assistant", "content": "```python\n"}]}
+{
+    "CH001": [
+        {
+            "role": "system",
+            "content": "You are an Expert Coding Assistant. Modify the provided code based on the instructions. Return ONLY the code."
+        },
+        {
+            "role": "user",
+            "content": "Instruction: delete this function and add a function for adding 2 numbers\n\nCode:\ndef greet_user():\r\n    \"\"\"\r\n    Prints a personalized greeting message.\r\n\r\n    Returns:\r\n        None\r\n    \"\"\"\r\n    name = input(\"Please enter your name: \")\r\n    print(f\"Hello {name}\")"
+        },
+        {
+            "role": "assistant",
+            "content": "```python\n"
+        }
+    ],
+    "SIDEBAR_CHAT": [
+        {
+            "role": "system",
+            "content": "You are a helpful AI coding assistant. Answer questions or explain code clearly.\n\nYou may receive a WORKSPACE_MAP summarizing symbols and imports from saved workspace files (TypeScript/JavaScript via the editor, Python via the knowledge API). Use it to avoid duplicating existing helpers, to name things consistently, and to reference real file paths and symbols when suggesting edits."
+        },
+        {
+            "role": "user",
+            "content": "WORKSPACE_MAP (from AST index on save; may be partial):\n--- del.py ---\nFile: c:\\Users\\Hanish\\Desktop\\New-Researches\\hancode-extension\\hancode-playground\\del.py\n- [function] hello (L1)\n\n\n---\nUSER:\nActive file: del.py (python)\nUse WORKSPACE_MAP in the server-enriched prompt to align with existing code.\nTask:\nwhere is hello function at?"
+        }
+    ],
+    "INLINE_COMPLETE": [
+        {
+            "role": "system",
+            "content": "You are a code completion engine. Continue the code provided. Return ONLY the code completion."
+        },
+        {
+            "role": "user",
+            "content": "Language: python\nFile: c:\\Users\\Hanish\\Desktop\\New-Researches\\hancode-extension\\hancode-playground\\del.py\nContext (recent lines ending at cursor):\ndef hel\nComplete from the cursor onward on the current line (and short continuation if needed). Return ONLY code, no markdown, no commentary."
+        }
+    ]
+}
