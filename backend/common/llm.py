@@ -2,7 +2,14 @@ import json
 import asyncio
 from ollama import AsyncClient
 
+from config import LLMConfig
+from common.logging_service import Logger
+
+
+logger = Logger(__name__).get_logger()
+
 conversations = {
+    "SIDEBAR_CHAT": [],
     "CH001": []
 }
 
@@ -10,8 +17,11 @@ conversations = {
 class LLMClient():
     def __init__(self) -> None:
         self.client = AsyncClient()
-        self.model_name = 'llama3.2'
-        self.temperature = 0.7
+        self.model_name = LLMConfig.LLM_MODEL
+        self.temperature = LLMConfig.temperature
+        self._client_pool = None
+        
+        logger.info(f"LLM client initialised with model: {self.model_name}")
 
     def _add_msg(self, text: str, role: str, messages: list) -> list:
         messages.append({'role': role, 'content': text})
@@ -38,8 +48,9 @@ class LLMClient():
             stream=True,
             options={
                 'stop': ["```"],
-                'temperature': self.temperature
-            }
+                'temperature': self.temperature,
+                "num_predict": 512
+            },
         ):
 
             if not part['done']:
@@ -50,16 +61,22 @@ class LLMClient():
 
         yield {"complete": full_response}
 
-    def _save_conversation(self, conversation_id: str, messages: list) -> None:
+    def _save_conversation(self, conversation_id: str, messages: list) -> bool
         conversations[conversation_id] = messages
 
-        with open('store/conversations.json', 'r') as f:
-            all_conversations = json.load(f)
+        try:
+            with open('store/conversations.json', 'r') as f:
+                all_conversations = json.load(f)
 
+        except (FileNotFoundError, json.JSONDecodeError):
+            all_conversations = {}
+            
         all_conversations[conversation_id] = messages
 
         with open('store/conversations.json', 'w') as f:
-            f.write(json.dumps(all_conversations))
+            json.dump(all_conversations, f)
+
+        logger.info(f"[save_conversation] Status: Done")
 
 
 if __name__ == "__main__":
@@ -78,10 +95,12 @@ if __name__ == "__main__":
 
     async def test_response():
         async for chunk in llm.stream_processor(hist):
-            print(chunk.get('partial'), end='', flush=True)
+            if "partial" in chunk:
+                print(chunk.get('partial'), end="", flush=True)
+            elif "complete" in chunk:
+                full = chunk.get('complete')
+                llm._add_assistant_msg(full, hist)
 
-        llm._add_assistant_msg(chunk.get('complete'), hist)
-
+        llm._save_conversation('CH001', hist)
+        
     asyncio.run(test_response())
-
-    llm._save_conversation('CH001', hist)
