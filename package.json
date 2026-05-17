@@ -1,35 +1,53 @@
 {
-  "name": "han-ext",
-  "version": "0.0.1",
-  "description": "hancode - AI assiated coding with local servers",
-  "main": "out/extension.js",
-  "scripts": {
-    "compile": "tsc -p ./",
-    "test": "test"
-  },
-  "engines": {
-    "vscode": "^1.107.0"
-  },
-  "contributes": {
-    "commands": [
-      {
-        "command": "hancode.health",
-        "title": "Hancode: Health Check"
-      },
-      {
-        "command": "hancode.ask",
-        "title": "Hancode: Ask AI"
-      }
-    ]
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/vscode": "1.107.0",
-    "typescript": "^5.0.0"
-  },
-  "author": "Hanish Dhanwalkar",
-  "license": "MIT",
-  "dependencies": {
-    "axios": "^1.16.0"
-  }
+    "name": "han-ext",
+    "version": "0.0.1",
+    "description": "hancode - AI assiated coding with local servers",
+    "main": "out/extension.js",
+    "scripts": {
+        "compile": "tsc -p ./",
+        "test": "test"
+    },
+    "engines": {
+        "vscode": "^1.107.0"
+    },
+    "contributes": {
+        "commands": [
+            {
+                "command": "hancode.health",
+                "title": "Hancode: Health Check"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "hancode-sidebar",
+                    "title": "Hancode",
+                    "icon": "icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "hancode-sidebar": [
+                {
+                    "id": "hancode-chat",
+                    "type": "webview",
+                    "name": "AI Chat",
+                    "icon": "icon_side_bar.svg"
+                }
+            ]
+        }
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/node": "^20.0.0",
+        "@types/vscode": "1.107.0",
+        "typescript": "^5.0.0",
+        "typescript-eslint": "^8.59.3"
+    },
+    "author": "Hanish Dhanwalkar",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^1.16.0",
+        "lint": "^1.2.2"
+    }
 }
