@@ -48,7 +48,7 @@ def test2():
 
 if __name__ == "__main__":
     # # Test 1: Chat
-    # test1()
+    test1()
 
     # Test 2: LLM 1 time invoke
-    test2()
+    # test2()

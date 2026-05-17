@@ -8,18 +8,16 @@ class LLMConfig(BaseModel):
         'temperature': 0.7,
         'num_predict': 512,
         'repeat_penalty': 1.2,  # Prevents repetition loops
-        # 'stop': ["```"]       # Removed: was cutting off code blocks
     }
 
 
 class SideChatConfig(BaseModel):
-    # LLM_MODEL: ClassVar[str] = "llama3.2"
-    # temperature: ClassVar[float] = 0.7
-    sys_prompt: ClassVar[str] = "You are a Expert Coding asssisant. Answer questions in very short; Explain only when specifically asked to."
+    LLM_MODEL: ClassVar[str] = "llama3.2"
+    sys_prompt: ClassVar[str] = "You are a coding assistant. Provide concise and relevant code suggestions and explanations in response to user queries."
     llm_options: ClassVar[dict] = {
         'temperature': 0.7,
         'num_predict': 512,
-        'repeat_penalty': 1.2,  # Prevents repetition loops
+        'repeat_penalty': 1.2,
     }
 
 
@@ -37,7 +35,6 @@ class AutoCompleteConfig(BaseModel):
         ]
     }
     sys_prompt: ClassVar[str] = """You are an IDE autocomplete engine.
-
 Rules:
 - Output ONLY the code completion
 - No markdown
@@ -47,4 +44,24 @@ Rules:
 - Continue naturally from the cursor
 - Keep completion concise
 - Stop when completion is finished
+"""
+
+    prompt_template: ClassVar[str] = """
+Given the code context, provide the COMPLETE corrected/improved code for the section between PREFIX and POST.
+You can refactor, rename variables (short and meaningful), add/remove lines, fix bugs -whateever improves the code.
+Return ONLY the code that replaces the MIDDLE section. Do NOT include PREFIX or POST in the response.
+
+<PREFIX>
+{prefix_code}
+</PREFIX>
+
+<MIDDLE>
+[user_cursor_here]
+</MIDDLE>
+
+<POST>
+{post_code}
+</POST>
+
+Respond with the complete improved code:\n
 """

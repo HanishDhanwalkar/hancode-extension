@@ -4,16 +4,19 @@ from typing import AsyncGenerator
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 
+from config import SideChatConfig, AutoCompleteConfig
 from src.schemas import ChatRequest, AutoCompleteRequest
 from common.llm import LLMClient
 from common.logging_service import Logger
-from config import SideChatConfig, AutoCompleteConfig
 
 
 logger = Logger(__name__).get_logger()
 
 app = FastAPI()
-sidechatllm = LLMClient()
+sidechatllm = LLMClient(
+    model_name=SideChatConfig.LLM_MODEL,
+    llm_options=SideChatConfig.llm_options
+)
 autocompletellm = LLMClient(
     model_name=AutoCompleteConfig.LLM_MODEL,
     llm_options=AutoCompleteConfig.llm_options
@@ -46,13 +49,15 @@ async def chat_stream(request: ChatRequest):
             async for chunk in sidechatllm.stream_processor(messages):
                 if "partial" in chunk:
                     full_res += chunk.get('partial')
-                    response_json = json.dumps(
-                        {"type": "partial", "content": chunk.get('partial'), "done": False})
+                    response_json = json.dumps({
+                        "type": "partial",
+                        "content": chunk.get('partial'),
+                        "done": False
+                    })
                     yield f"data: {response_json}\n\n"
 
                 elif "complete" in chunk:
                     full_res += chunk.get('complete')
-                    # yield {"text": full_res, "done": True}
 
             sidechatllm._add_assistant_msg(full_res, messages)
             sidechatllm._save_conversation(request.conversation_id, messages)
@@ -64,10 +69,13 @@ async def chat_stream(request: ChatRequest):
 
         except Exception as e:
             logger.error(
-                f"Error processing chat stream request: {e}", exc_info=True)
-            response_json = json.dumps(
-                {'type': "error", "content": str(e)}
+                f"Error processing chat stream request: {e}",
+                exc_info=True
             )
+            response_json = json.dumps({
+                'type': "error",
+                "content": str(e)
+            })
             yield f"data: {response_json}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
@@ -79,19 +87,14 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
     Fast SSE streaming endpoint for in-line autocomplete
     """
     logger.info(
-        f"Autocomplete request received: pre_len={len(request.pre_cursor)}, post_len={len(request.post_cursor)}")
-    prompt = ("Complete the code:"
-              f"<PREFIX>\n{request.pre_cursor}</PREFIX>\n"
-              f"<POST>\n{request.post_cursor}</POST>\n\n"
-              "<MIDDLE>\n"
-              )
-
-    # logging_str = f"{request.pre_cursor[:100] if len(request.pre_cursor) > 100 else request.pre_cursor}..."
-    # logging_str = "\\n".join(logging_str.split("\n"))
-    # logger.info(
-    #     f"Received autocomplete stream request:" +
-    #     logging_str
-    # )
+        "Autocomplete request received: pre_len=%s, post_len=%s",
+        len(request.pre_cursor),
+        len(request.post_cursor)
+    )
+    prompt = AutoCompleteConfig.prompt_template.format(
+        prefix_code=request.pre_cursor,
+        post_code=request.post_cursor
+    )
 
     async def event_generator() -> AsyncGenerator[str, None]:
         try:
@@ -100,29 +103,39 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
                     prompt=prompt,
                     sys_prompt=AutoCompleteConfig.sys_prompt
                 ):
-                    # yield {"text": chunk}
                     if await http_request.is_disconnected():
                         logger.info("Client disconnected, stopping streaming")
+                        break
 
-                    response_json = json.dumps(
-                        {'type': "token", "content": chunk}
-                    )
+                    response_json = json.dumps({
+                        'type': "token",
+                        "content": chunk
+                    })
                     yield f"data: {response_json}\n\n"
 
         except asyncio.TimeoutError:
             logger.warning("Request Stream timed out")
-            response_json = json.dumps(
-                {'type': 'error', 'content': 'Request timed out'})
+            response_json = json.dumps({
+                'type': 'error',
+                'content': 'Request timed out'
+            })
             yield f"data: {response_json}\n\n"
         except Exception as e:
             logger.error(
-                f"Error processing autocomplete stream request: {e}", exc_info=True)
-            response_json = json.dumps(
-                {'type': "error", "content": str(e)}
+                "Error processing autocomplete stream request: %s",
+                str(e),
+                exc_info=True
             )
+            response_json = json.dumps({
+                'type': "error",
+                "content": str(e)
+            })
             yield f"data: {response_json}\n\n"
         finally:
-            yield f"data: [DONE]\n\n"
+            response_json = json.dumps({
+                'type': "done"
+            })
+            yield f"data: {response_json}\n\n"
 
     return StreamingResponse(
         event_generator(),
@@ -137,5 +150,4 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
 
 if __name__ == "__main__":
     import uvicorn
-    # Using 127.0.0.1 to match the extension's call
     uvicorn.run(app, host="127.0.0.1", port=8000)

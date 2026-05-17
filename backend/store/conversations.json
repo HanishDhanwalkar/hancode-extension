@@ -1,1 +1,48 @@
-{"CH001": [{"role": "system", "content": "You are a Expert Coding asssisant. Answer questions in very short; Explain only when specifically asked to."}, {"role": "user", "content": "explain black holes to 5 year old"}, {"role": "assistant", "content": "Black holes are like super strong vacuum cleaners in space that suck up everything, even stars! They're so dense and heavy that nothing can escape once it gets too close.\n\nImagine you have a really powerful suction cup at home, but instead of picking up toys, it picks up whole rooms!\n\nThat's kind of what a black hole does. It pulls everything towards itself with an invisible force called gravity.Black holes are like super strong vacuum cleaners in space that suck up everything, even stars! They're so dense and heavy that nothing can escape once it gets too close.\n\nImagine you have a really powerful suction cup at home, but instead of picking up toys, it picks up whole rooms!\n\nThat's kind of what a black hole does. It pulls everything towards itself with an invisible force called gravity."}], "TEST1": [{"role": "system", "content": "You are a Expert Coding asssisant."}, {"role": "user", "content": "Add doctring in Google style to this code: def hello():\n    print('Hello World')"}, {"role": "assistant", "content": "```python"}, {"role": "assistant", "content": "\ndef hello() -> None:\n    \"\"\"\n    Prints 'Hello World' to the console.\n\n    This is an example of how you can add a docstring to your Python function.\n    The docstring should describe what the function does, its parameters, and any exceptions it raises.\n\n    Args:\n        None\n\n    Returns:\n        None\n    \"\"\"\n    print('Hello World')\n```\n\nHowever, since this code doesn't take in arguments or return anything that's not `None`, we could make our documentation a bit more concise:\n\n```python\ndef hello() -> None:\n    \"\"\"\n    Prints 'Hello World' to the console.\n    \"\"\"\n    print('Hello World')\n```\nOr even simpler for Python 3.8+ with type hints and docstrings (PEP-257):\n\n```python\ndef greet(name: str) -> None:\n    \"\"\"Prints a greeting message.\"\"\"\n    if not name:\n        raise ValueError(\"Name cannot be empty\")\n    print(f\"Hello, {name}!\")\n```\nIn the above example I changed function to `greet` and added more functionality."}]}
+{
+    "CH001": [
+        {
+            "role": "system",
+            "content": "You are a Expert Coding asssisant. Answer questions in very short; Explain only when specifically asked to."
+        },
+        {
+            "role": "user",
+            "content": "explain black holes to 5 year old"
+        },
+        {
+            "role": "assistant",
+            "content": "Black holes are like super strong vacuum cleaners in space that suck up everything, even stars! They're so dense and heavy that nothing can escape once it gets too close.\n\nImagine you have a really powerful suction cup at home, but instead of picking up toys, it picks up whole rooms!\n\nThat's kind of what a black hole does. It pulls everything towards itself with an invisible force called gravity.Black holes are like super strong vacuum cleaners in space that suck up everything, even stars! They're so dense and heavy that nothing can escape once it gets too close.\n\nImagine you have a really powerful suction cup at home, but instead of picking up toys, it picks up whole rooms!\n\nThat's kind of what a black hole does. It pulls everything towards itself with an invisible force called gravity."
+        }
+    ],
+    "TEST1": [
+        {
+            "role": "system",
+            "content": "You are a Expert Coding asssisant."
+        },
+        {
+            "role": "user",
+            "content": "Add doctring in Google style to this code: def hello():\n    print('Hello World')"
+        },
+        {
+            "role": "assistant",
+            "content": "```python"
+        },
+        {
+            "role": "assistant",
+            "content": "\ndef hello():\n    \"\"\"\n    Prints 'Hello World' to the console.\n\n    :return: None\n    \"\"\"\n\n    # The function does not take any arguments, as indicated by its name and lack of parameters.\n    \n    # This is a simple statement that prints a string message. It's generally good practice to \n    # include comments explaining what this line will do in terms of the program flow or output.\n\n    print('Hello World')\n```\n\nHowever, for such a short function with no variable usage or side effects other than printing to the console, you could consider simplifying it further by removing the docstring altogether. \n\nHere's an example:\n\n```python\ndef hello():\n    \"\"\"Prints 'Hello World'\"\"\"\n    print('Hello World')\n```\nThis version still adheres to Google Python Style Guide for docstrings.\n\nIf you want a more detailed explanation of what this function does, including any side effects or return values (which in this case is None), but without overwhelming the reader with too much detail:\n\n```python\ndef hello():\n    \"\"\"\n    Prints 'Hello World' and returns None.\n    \n    This function doesn't do anything else. It's a simple statement that can be used as part of more complex \n    logic, or it could serve as an example for demonstrating how to use the print() function in Python.\n\n    :return: None\n    \"\"\"\n    print('Hello World')\n```"
+        }
+    ],
+    "SIDEBAR_CHAT": [
+        {
+            "role": "system",
+            "content": "You are a Expert Coding asssisant. Answer questions in very short; Explain only when specifically asked to."
+        },
+        {
+            "role": "user",
+            "content": "Hi where is the greet functiion"
+        },
+        {
+            "role": "assistant",
+            "content": "There is no \"greet\" function by default, I'm assuming you're referring to JavaScript's `console.log(\"Hello World!\")` or a custom greeting function created elsewhere? \n\nIf not, please provide more context about what you mean.There is no \"greet\" function by default, I'm assuming you're referring to JavaScript's `console.log(\"Hello World!\")` or a custom greeting function created elsewhere? \n\nIf not, please provide more context about what you mean."
+        }
+    ]
+}

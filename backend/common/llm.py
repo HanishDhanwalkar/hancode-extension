@@ -1,5 +1,4 @@
 import json
-import asyncio
 from ollama import AsyncClient
 
 from common.logging_service import Logger

@@ -32,9 +32,9 @@ export class SideChatProvider implements vscode.WebviewViewProvider {
 
                     await streamChat(
                         fullPrompt,
-                        (chunk) => webviewView.webview.postMessage({ type: 'reply', value: chunk }),
+                        (chunk) => webviewView.webview.postMessage({ type: 'chunk', value: chunk }),
                         (full) => webviewView.webview.postMessage({ type: 'streaming_complete', value: full }),
-                        (err) => webviewView.webview.postMessage({ type: 'reply', value: err })
+                        (err) => webviewView.webview.postMessage({ type: 'error', value: err })
                     );
                 } catch (err) {
                     webviewView.webview.postMessage({ type: 'reply', value: "Fatal: Could not reach FastAPI server." });
@@ -97,7 +97,7 @@ export class SideChatProvider implements vscode.WebviewViewProvider {
                 });
 
                 input.onkeydown = (e) => {
-                    if(e.key === 'Enter' && input.value && input.disabled) {
+                    if(e.key === 'Enter' && input.value && !input.disabled) {
                         const userMsg = document.createElement('div');
                         userMsg.className = 'msg msg-user';
                         userMsg.innerHTML = "<b>You:</b> " + input.value;
