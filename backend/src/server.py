@@ -1,56 +1,112 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Optional
+import json
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 
+from src.schemas import ChatRequest, AutoCompleteRequest
 from common.llm import LLMClient
+from common.logging_service import Logger
+from config import SideChatConfig, AutoCompleteConfig
+
+
+logger = Logger(__name__).get_logger()
 
 app = FastAPI()
-llm = LLMClient()
+sidechatllm = LLMClient()
+autocompletellm = LLMClient(
+    model_name=AutoCompleteConfig.LLM_MODEL,
+    llm_options=AutoCompleteConfig.llm_options
+)
 
-# Updated to match the extension's request structure
-class GenerateRequest(BaseModel):
-    prompt: str
-    mode: str  # 'chat' or 'complete'
-    conversation_id: Optional[str] = "CH001"
 
-@app.post("/generate")
-async def generate(request: GenerateRequest):
-    try:
-        messages = []
-        
-        # 1. System Prompt based on Mode
-        if request.mode == "complete":
-            sys_msg = "You are a code completion engine. Continue the code provided. Return ONLY the code completion."
-        else:
-            sys_msg = "You are a helpful AI coding assistant. Answer questions or explain code clearly."
-            
-        llm._add_sys_prompt(sys_msg, messages)
-        
-        # 2. Add the User Prompt
-        llm._add_user_msg(request.prompt, messages)
-        
-        # 3. Stream from your existing LLM client
-        full_response = ""
-        async for chunk in llm.stream_processor(messages):
-            # Checking for 'complete' key based on your original server.py logic
-            if isinstance(chunk, dict) and "complete" in chunk:
-                full_response = chunk["complete"]
-            elif isinstance(chunk, str):
-                full_response += chunk
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
-        # 4. Post-processing
-        # Remove markdown artifacts if the model returns them
-        clean_response = full_response.replace("```python", "").replace("```", "").strip()
-        
-        # 5. Save History
-        llm._save_conversation(request.conversation_id, messages)
-        
-        # Return the key "text" as expected by api.ts
-        return {"text": clean_response}
 
-    except Exception as e:
-        print(f"Server Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+@app.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """
+    SSE streaming endpoint for chat - streams response chunks to client
+    """
+    logger.info(
+        f"Received chat stream request:"
+        f"{request.prompt[:50] if len(request.prompt) > 50 else request.prompt}..."
+    )
+
+    async def event_generator():
+        try:
+            messages = []
+            sys_msg = SideChatConfig.sys_prompt
+            sidechatllm._add_sys_prompt(sys_msg, messages)
+            sidechatllm._add_user_msg(request.prompt, messages)
+
+            full_res = ""
+            async for chunk in sidechatllm.stream_processor(messages):
+                if "partial" in chunk:
+                    full_res += chunk.get('partial')
+                    yield {"text": chunk.get('partial'), "done": False}
+                elif "complete" in chunk:
+                    full_res += chunk.get('complete')
+                    # yield {"text": full_res, "done": True}
+
+            sidechatllm._add_assistant_msg(full_res, messages)
+            sidechatllm._save_conversation(request.conversation_id, messages)
+
+            response_json = json.dumps(
+                {'type': "complete", "content": full_res}
+            )
+            yield f"data: {response_json}\n\n"
+
+        except Exception as e:
+            logger.error(
+                f"Error processing chat stream request: {e}", exc_info=True)
+            response_json = json.dumps(
+                {'type': "error", "content": str(e)}
+            )
+            yield f"data: {response_json}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@app.post("/autocomplete/stream")
+async def autocomplete_stream(request: AutoCompleteRequest):
+    """
+    Fast SSE streaming endpoint for in-line autocomplete
+    """
+    prompt = """Complete the code:
+"<PREFIX>\n {pre_code}</PREFIX>\n"
+"<POST>\n {post_code}</POST>\n\n"
+"<MIDDLE>\n"
+"""
+    prompt = prompt.format(
+        pre_code=request.pre_cursor,
+        post_code=request.post_cursor
+    )
+
+    logging_str = f"{request.pre_cursor[:100] if len(request.pre_cursor) > 100 else request.pre_cursor}..."
+    logging_str = "\\n".join(logging_str.split("\n"))
+    logger.info(
+        f"Received autocomplete stream request:" +
+        logging_str
+    )
+
+    async def event_generator():
+        try:
+            async for chunk in autocompletellm.invoke_stream(
+                prompt="```python\n" + request.code_window + "\n```",
+                sys_prompt=AutoCompleteConfig.sys_prompt
+            ):
+                yield {"text": chunk}
+        except Exception as e:
+            logger.error(
+                f"Error processing autocomplete stream request: {e}", exc_info=True)
+            response_json = json.dumps(
+                {'type': "error", "content": str(e)}
+            )
+            yield f"data: {response_json}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 
 if __name__ == "__main__":
     import uvicorn
