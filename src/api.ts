@@ -1,3 +1,7 @@
+import { API_BASE_URL, CHAT_ENDPOINT, AUTO_COMPLETE_ENDPOINT } from "./api.config";
+
+
+
 export async function streamChat(
     prompt: string,
     onChunk: (chunk: string) => void,
@@ -5,7 +9,7 @@ export async function streamChat(
     onError: (err: string) => void
 ) {
     try {
-        const response = await fetch('http://localhost:8000/chat/stream', {
+        const response = await fetch(`${API_BASE_URL}${CHAT_ENDPOINT}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -66,7 +70,7 @@ export async function streamComplete(
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        const response = await fetch('http://localhost:8000/autocomplete/stream', {
+        const response = await fetch(`${API_BASE_URL}${AUTO_COMPLETE_ENDPOINT}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
