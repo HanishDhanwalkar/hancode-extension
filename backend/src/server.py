@@ -1,7 +1,7 @@
 import json
 import asyncio
 from typing import AsyncGenerator
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 
 from src.schemas import ChatRequest, AutoCompleteRequest
@@ -46,7 +46,8 @@ async def chat_stream(request: ChatRequest):
             async for chunk in sidechatllm.stream_processor(messages):
                 if "partial" in chunk:
                     full_res += chunk.get('partial')
-                    response_json = json.dumps({"type": "partial", "content": chunk.get('partial'), "done": False})
+                    response_json = json.dumps(
+                        {"type": "partial", "content": chunk.get('partial'), "done": False})
                     yield f"data: {response_json}\n\n"
 
                 elif "complete" in chunk:
@@ -77,12 +78,13 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
     """
     Fast SSE streaming endpoint for in-line autocomplete
     """
-    logger.info(f"Autocomplete request received: pre_len={len(request.pre_cursor)}, post_len={len(request.post_cursor)}")
+    logger.info(
+        f"Autocomplete request received: pre_len={len(request.pre_cursor)}, post_len={len(request.post_cursor)}")
     prompt = ("Complete the code:"
-        f"<PREFIX>\n{request.pre_cursor}</PREFIX>\n"
-        f"<POST>\n{request.post_cursor}</POST>\n\n"
-        "<MIDDLE>\n"
-    )
+              f"<PREFIX>\n{request.pre_cursor}</PREFIX>\n"
+              f"<POST>\n{request.post_cursor}</POST>\n\n"
+              "<MIDDLE>\n"
+              )
 
     # logging_str = f"{request.pre_cursor[:100] if len(request.pre_cursor) > 100 else request.pre_cursor}..."
     # logging_str = "\\n".join(logging_str.split("\n"))
@@ -91,9 +93,9 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
     #     logging_str
     # )
 
-    async def event_generator()->AsyncGenerator[str, None]:
+    async def event_generator() -> AsyncGenerator[str, None]:
         try:
-            async with asyncio.timeout(30): # prevents hanging
+            async with asyncio.timeout(30):  # prevents hanging
                 async for chunk in autocompletellm.invoke_stream(
                     prompt=prompt,
                     sys_prompt=AutoCompleteConfig.sys_prompt
@@ -101,16 +103,17 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
                     # yield {"text": chunk}
                     if await http_request.is_disconnected():
                         logger.info("Client disconnected, stopping streaming")
-                    
+
                     response_json = json.dumps(
                         {'type': "token", "content": chunk}
-                    )    
+                    )
                     yield f"data: {response_json}\n\n"
-                    
+
         except asyncio.TimeoutError:
             logger.warning("Request Stream timed out")
-            response_json = json.dumps({'type': 'error', 'content': 'Request timed out'})
-            yield f"data: {response_json}\n\n"                    
+            response_json = json.dumps(
+                {'type': 'error', 'content': 'Request timed out'})
+            yield f"data: {response_json}\n\n"
         except Exception as e:
             logger.error(
                 f"Error processing autocomplete stream request: {e}", exc_info=True)
@@ -122,11 +125,11 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
             yield f"data: [DONE]\n\n"
 
     return StreamingResponse(
-        event_generator(), 
+        event_generator(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no", # Disable Nginx buffering if used
+            "X-Accel-Buffering": "no",  # Disable Nginx buffering if used
             "Connection": "keep-alive"
         }
     )

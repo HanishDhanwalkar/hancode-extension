@@ -10,7 +10,6 @@ class LLMConfig(BaseModel):
         'repeat_penalty': 1.2,  # Prevents repetition loops
         # 'stop': ["```"]       # Removed: was cutting off code blocks
     }
-    
 
 
 class SideChatConfig(BaseModel):
@@ -22,6 +21,7 @@ class SideChatConfig(BaseModel):
         'num_predict': 512,
         'repeat_penalty': 1.2,  # Prevents repetition loops
     }
+
 
 class AutoCompleteConfig(BaseModel):
     LLM_MODEL: ClassVar[str] = "llama3.2"
@@ -36,11 +36,7 @@ class AutoCompleteConfig(BaseModel):
             "```",
         ]
     }
-    sys_prompt: ClassVar[str] = ("You are an expert software developer and coder. Follow all the best coding guidelines. Add no explanation or tests; JUST Completed code or next steps. Complete the code:\n"
-      
-    )
-    sys_prompt = """
-You are an IDE autocomplete engine.
+    sys_prompt: ClassVar[str] = """You are an IDE autocomplete engine.
 
 Rules:
 - Output ONLY the code completion
