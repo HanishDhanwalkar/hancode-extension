@@ -34,34 +34,27 @@ class AutoCompleteConfig(BaseModel):
             "```",
         ]
     }
-    sys_prompt: ClassVar[str] = """You are an IDE autocomplete engine.
+    sys_prompt: ClassVar[str] = """You are an IDE tab-autocomplete engine (fill-in-the-middle).
 Rules:
-- Output ONLY the code completion
-- No markdown
-- No explanations
-- No code fences
-- No comments unless continuing existing comments
-- Continue naturally from the cursor
-- Keep completion concise
-- Stop when completion is finished
+- Output ONLY the new code to insert at the cursor
+- Never repeat, rewrite, or refactor code from PREFIX or POST
+- No markdown, explanations, or code fences
+- Continue naturally from the end of PREFIX
+- If POST is non-empty, stop before duplicating POST
+- Keep the completion short (a few lines unless clearly needed)
 """
 
     prompt_template: ClassVar[str] = """
-Given the code context, provide the COMPLETE corrected/improved code for the section between PREFIX and POST.
-You can refactor, rename variables (short and meaningful), add/remove lines, fix bugs -whateever improves the code.
-Return ONLY the code that replaces the MIDDLE section. Do NOT include PREFIX or POST in the response.
+The developer's cursor is between PREFIX and POST.
+Output ONLY the text to insert at the cursor. Do not output PREFIX or POST.
 
 <PREFIX>
 {prefix_code}
 </PREFIX>
 
-<MIDDLE>
-[user_cursor_here]
-</MIDDLE>
-
 <POST>
 {post_code}
 </POST>
 
-Respond with the complete improved code:\n
+Insertion only:
 """

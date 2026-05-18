@@ -1,9 +1,6 @@
 import * as vscode from 'vscode';
 import { SideChatProvider } from './SideChatProvider';
 import { GhostTextProvider } from './GhostTextProvider';
-import { DiffVisualizer } from './diffVisualizer';
-
-let diffVisualizer: DiffVisualizer;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Hancode Activated');
@@ -13,10 +10,6 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('Hello Coder: Hancode is up and running!');
     });
 
-    diffVisualizer = new DiffVisualizer();
-    context.subscriptions.push({
-        dispose: () => diffVisualizer.dispose()
-    });
     const chatProvider = new SideChatProvider(context.extensionUri);
     const ghostProvider = new GhostTextProvider();
 

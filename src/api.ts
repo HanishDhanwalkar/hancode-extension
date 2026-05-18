@@ -58,7 +58,7 @@ export async function streamChat(
     }
 }
 
-export async function StreamCompleteRaw(
+export async function streamCompleteRaw(
     pre_cursor: string,
     post_cursor: string,
     onChunk: (chunk: string) => void,
@@ -83,7 +83,7 @@ export async function StreamCompleteRaw(
             signal: controller.signal
         });
 
-        clearInterval(timeoutId);
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             onError(`Server Error: ${response.statusText}`);
@@ -93,10 +93,22 @@ export async function StreamCompleteRaw(
         const reader = response.body!.getReader();
         const decoder = new TextDecoder();
         let full_res = "";
+        let finished = false;
+
+        const finish = () => {
+            if (finished) {
+                return;
+            }
+            finished = true;
+            onComplete(full_res);
+        };
 
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+                finish();
+                break;
+            }
 
             const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n');
@@ -107,9 +119,10 @@ export async function StreamCompleteRaw(
                         if (data.type === 'token') {
                             onChunk(data.content);
                             full_res += data.content;
-                        } else if (data.type === 'complete') {
-                            onComplete(full_res);
+                        } else if (data.type === 'complete' || data.type === 'done') {
+                            finish();
                         } else if (data.type === 'error') {
+                            finished = true;
                             onError(data.content);
                         }
                     } catch (e) {

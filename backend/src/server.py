@@ -99,6 +99,7 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
     async def event_generator() -> AsyncGenerator[str, None]:
         try:
             async with asyncio.timeout(30):  # prevents hanging
+                full_res = ""
                 async for chunk in autocompletellm.invoke_stream(
                     prompt=prompt,
                     sys_prompt=AutoCompleteConfig.sys_prompt
@@ -106,7 +107,7 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
                     if await http_request.is_disconnected():
                         logger.info("Client disconnected, stopping streaming")
                         break
-
+                    full_res += chunk
                     response_json = json.dumps({
                         'type': "token",
                         "content": chunk
@@ -132,6 +133,7 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
             })
             yield f"data: {response_json}\n\n"
         finally:
+            logger.info(f"Autocomplete stream completed: {full_res[:100]}...")
             response_json = json.dumps({
                 'type': "done"
             })
