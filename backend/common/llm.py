@@ -58,7 +58,8 @@ class LLMClient():
             model=self.model_name,
             messages=messages,
             stream=True,
-            options=self.llm_options
+            options=self.llm_options,
+            keep_alive="30m"
         ):
             if not part['done']:
                 content = part['message']['content']

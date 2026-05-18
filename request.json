@@ -1,0 +1,4 @@
+{
+    "pre_cursor": "def greet_user():\n    print('name', end='')\n\ndef get_user():",
+    "post_cursor": "if __name__ == '__main__':\n    greet_user()"
+}

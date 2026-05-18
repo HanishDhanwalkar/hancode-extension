@@ -95,6 +95,8 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
         prefix_code=request.pre_cursor,
         post_code=request.post_cursor
     )
+    
+    logger.debug("Autocomplete prompt preview: %s", prompt[:400])
 
     async def event_generator() -> AsyncGenerator[str, None]:
         try:
@@ -133,7 +135,7 @@ async def autocomplete_stream(request: AutoCompleteRequest, http_request: Reques
             })
             yield f"data: {response_json}\n\n"
         finally:
-            logger.info(f"Autocomplete stream completed: {full_res[:100]}...")
+            logger.info(f"Autocomplete stream completed: {full_res[:100]}")
             response_json = json.dumps({
                 'type': "done"
             })

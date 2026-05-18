@@ -16,4 +16,4 @@ class AutoCompleteRequest(BaseModel):
     @field_validator("pre_cursor", "post_cursor")
     @classmethod
     def sanitize(cls, v: str) -> str:
-        return v.replace("\x00", "").strip()
+        return v.replace("\x00", "")

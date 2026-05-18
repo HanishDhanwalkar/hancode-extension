@@ -1,5 +1,11 @@
 import { API_BASE_URL, CHAT_ENDPOINT, AUTO_COMPLETE_ENDPOINT } from "./api.config";
 
+type StreamCompleteOptions = {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    suppressAbortError?: boolean;
+};
+
 export async function streamChat(
     prompt: string,
     onChunk: (chunk: string) => void,
@@ -63,11 +69,16 @@ export async function streamCompleteRaw(
     post_cursor: string,
     onChunk: (chunk: string) => void,
     onComplete: (full: string) => void,
-    onError: (err: string) => void
+    onError: (err: string) => void,
+    options?: StreamCompleteOptions
 ) {
+    const controller = new AbortController();
+    const upstreamAbort = () => controller.abort();
+    options?.signal?.addEventListener('abort', upstreamAbort, { once: true });
+
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutMs = options?.timeoutMs ?? 5000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
         console.log(`[Autocomplete] Connecting to $(API_BASE_URL)${AUTO_COMPLETE_ENDPOINT}`);
 
@@ -133,12 +144,16 @@ export async function streamCompleteRaw(
         }
     } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
-            console.error("Completion Stream timed out.");
-            onError("Completion Stream timed out.");
+            if (!options?.suppressAbortError) {
+                console.error("Completion Stream timed out.");
+                onError("Completion Stream timed out.");
+            }
         } else {
             console.error("Streaming error:", err);
             const errorMsg = err instanceof Error ? err.message : String(err);
             onError(`Connection failed: ${errorMsg}`);
         }
+    } finally {
+        options?.signal?.removeEventListener('abort', upstreamAbort);
     }
 }

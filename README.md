@@ -26,6 +26,10 @@ hancode-extension
 
 ```npm run compile```
 
+### Check lints
+
+```npx tsc --noEmit```
+
 ### Run in debugger
 
 In VS Code's Debugger panel, (shortcut F5):
